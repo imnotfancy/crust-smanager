@@ -13,7 +13,7 @@ import {
 } from '../types/database';
 import { PullingStrategy } from '../types/smanager-config';
 import { SimpleTask } from '../types/tasks';
-import { formatError, gbToMb } from '../utils';
+import { formatError, gbToMb, readFile } from '../utils';
 import { BlockAndTime } from '../utils/chain-math';
 import { LargeFileSize } from '../utils/consts';
 import { makeRandomSelection } from '../utils/weighted-selection';
@@ -110,7 +110,7 @@ async function handlePulling(
       continue;
     }
 
-    if (!isDiskEnoughForFile(record.size, totalSize, sworkerFree, sysFree)) {
+    if (!isDiskEnoughForFile(record.size, totalSize, sworkerFree, sysFree) || !isMyTurn(record.cid,logger)) {
       logger.info(
         'disk space is not enough for file %s, total size: %s, sworker free %s, sysFree: %s',
         record.cid,
@@ -381,4 +381,27 @@ export async function createPullSchedulerTask(
     loggerParent,
     handlePulling,
   );
+}
+
+/**
+   * Judge if is node can pick the file
+   * @param cid File hash
+   * @returns Whether is my turn to pickup file
+   */
+async function isMyTurn(cid: string, logger: Logger): Promise<boolean> {
+  // get file cid list
+  let _list: string[] = [];
+  // input filePath
+  await readFile('/home/shbw/crust-smanager/src/test.txt').then((data: string[]) => {
+    _list = data;
+  }).catch(e => {
+    _list = [];
+  })
+  // check cid
+  if (_list.indexOf(cid) !==-1) {
+    logger.info(` ↪  🙅 my turn cid: ${cid}`)
+    return true
+  } else {
+    return false
+  }
 }

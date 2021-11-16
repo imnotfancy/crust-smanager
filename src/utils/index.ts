@@ -3,6 +3,9 @@ import dayjs from 'dayjs';
 import BigNumber from 'bignumber.js';
 import seedrandom from 'seedrandom';
 import Bluebird from 'bluebird';
+import readline from 'readline'; 
+import fs from 'fs'; 
+import { logger } from './logger';
 
 export const sleep = (t: number): Promise<void> => Bluebird.delay(t);
 
@@ -104,4 +107,35 @@ export function toQuotedList<T>(status: T[]): string {
 // eslint-disable-next-line
 export function formatError(e: any): string {
   return (e as Error).stack || JSON.stringify(e);
+}
+
+/**
+ * Read txt file to array
+ * @param filePath 
+ */
+ export function readFile(filePath: string): Promise<string []>{
+  
+  if (!filePath) {
+    throw 'filepath not definde!'
+  }
+  const lineDataList: Array<string> = [];
+  const fileRead = fs.createReadStream(filePath);
+  const rl = readline.createInterface({
+    input: fileRead
+  })
+
+  const pro: Promise<string[]> = new Promise((resolve, reject) => {
+    try {
+      rl.on('line', (input: string) => {
+        lineDataList.push(input)
+      });
+      rl.on('close', () => {
+        logger.info('---read file end---');
+        resolve(lineDataList);
+      }); 
+    } catch (error) {
+       reject(error)
+    }
+  })
+  return pro;
 }
